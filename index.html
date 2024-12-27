@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Super Resolution</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Theme Toggle -->
+        <div class="flex justify-end mb-4">
+            <button id="theme-toggle" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+                Toggle Theme
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-center mb-8">Medical Image Reconstruction</h1>
+            
+            <!-- Upload Section -->
+            <div class="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Upload Image</label>
+                    <input type="file" id="imageInput" accept="image/*" class="w-full p-2 border rounded">
+                </div>
+                <button id="enhanceBtn" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+                    Enhance Image
+                </button>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Original Image</h2>
+                    <div id="originalPreview" class="bg-gray-200 dark:bg-gray-700 h-64 rounded-lg flex items-center justify-center">
+                        <p class="text-gray-500">No image selected</p>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Enhanced Image</h2>
+                    <div id="enhancedPreview" class="bg-gray-200 dark:bg-gray-700 h-64 rounded-lg flex items-center justify-center">
+                        <p class="text-gray-500">Enhancement will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        themeToggle.addEventListener('click', () => {
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+            }
+        });
+
+        // Image Processing
+        const imageInput = document.getElementById('imageInput');
+        const enhanceBtn = document.getElementById('enhanceBtn');
+        const originalPreview = document.getElementById('originalPreview');
+        const enhancedPreview = document.getElementById('enhancedPreview');
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalPreview.innerHTML = `<img src="${e.target.result}" class="max-h-full max-w-full object-contain">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        enhanceBtn.addEventListener('click', async () => {
+    const file = imageInput.files[0];
+    if (!file) {
+        alert('Please select an image first');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        enhanceBtn.disabled = true;
+        enhanceBtn.textContent = 'Processing...';
+        enhancedPreview.innerHTML = '<p class="text-gray-500">Processing...</p>';
+
+        const response = await fetch('/enhance', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            enhancedPreview.innerHTML = `
+                <img src="${imageUrl}" class="max-h-full max-w-full object-contain">
+                <a href="${imageUrl}" download="enhanced_image.png" class="mt-2 inline-block bg-blue-500 text-white py-1 px-3 rounded">Download</a>
+            `;
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error enhancing image');
+        }
+        } catch (error) {
+            console.error('Error:', error);
+            enhancedPreview.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+        } finally {
+            enhanceBtn.disabled = false;
+            enhanceBtn.textContent = 'Enhance Image';
+        }
+    });
+    </script>
+</body>
+</html>
