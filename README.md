@@ -21,4 +21,5 @@ This web application uses a  Generative Adversarial Network (SRGAN) to enhance t
 - Python 3.7+
 - pip
 - Virtual environment (recommended)
+- Tensorflow
 
